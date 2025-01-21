@@ -125,6 +125,109 @@ resource "aws_default_network_acl" "main_nacl" {
   }
 }
 
+resource "aws_network_acl" "public_nacl" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  egress {
+    rule_no    = 100
+    protocol   = "-1"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+
+  ingress {
+    rule_no    = 100
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 80
+    to_port    = 80
+  }
+
+  ingress {
+    rule_no    = 110
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 443
+    to_port    = 443
+  }
+
+  ingress {
+    rule_no    = 120
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 22
+    to_port    = 22
+  }
+
+  tags = {
+    Name = "Public-NACL"
+  }
+}
+
+resource "aws_network_acl_association" "public_subnet_1_assoc" {
+  subnet_id      = aws_subnet.public_subnet_1.id
+  network_acl_id = aws_network_acl.public_nacl.id
+}
+
+resource "aws_network_acl_association" "public_subnet_2_assoc" {
+  subnet_id      = aws_subnet.public_subnet_2.id
+  network_acl_id = aws_network_acl.public_nacl.id
+}
+
+resource "aws_network_acl" "private_nacl" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  egress {
+    rule_no    = 100
+    protocol   = "-1"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+
+  ingress {
+    rule_no    = 100
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "10.0.1.0/24"
+    from_port  = 0
+    to_port    = 65535
+  }
+
+  ingress {
+    rule_no    = 110
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "10.0.2.0/24"
+    from_port  = 0
+    to_port    = 65535
+  }
+
+  ingress {
+    rule_no    = 120
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "10.0.3.0/24"
+    from_port  = 0
+    to_port    = 65535
+  }
+
+  tags = {
+    Name = "Private-NACL"
+  }
+}
+
+resource "aws_network_acl_association" "private_subnet_1_assoc" {
+  subnet_id      = aws_subnet.private_subnet_1.id
+  network_acl_id = aws_network_acl.private_nacl.id
+}
+
 ### 7. Security Groups ###
 resource "aws_security_group" "nat_sg" {
   vpc_id = aws_vpc.main_vpc.id
