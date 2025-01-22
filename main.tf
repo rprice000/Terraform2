@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-east-2" # Replace with your desired region
+  region = "us-east-2"
 }
 
 ### 1. VPC ###
@@ -10,7 +10,22 @@ resource "aws_vpc" "main_vpc" {
   }
 }
 
-### 2. Internet Gateway ###
+### 2. DHCP Option Set ###
+resource "aws_vpc_dhcp_options" "main_dhcp_options" {
+  domain_name         = "ec2.internal" # Adjust based on your requirements
+  domain_name_servers = ["AmazonProvidedDNS"]
+
+  tags = {
+    Name = "Main-DHCP-Options"
+  }
+}
+
+resource "aws_vpc_dhcp_options_association" "main_dhcp_options_assoc" {
+  vpc_id          = aws_vpc.main_vpc.id
+  dhcp_options_id = aws_vpc_dhcp_options.main_dhcp_options.id
+}
+
+### 3. Internet Gateway ###
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main_vpc.id
   tags = {
@@ -18,7 +33,7 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
-### 3. Subnets ###
+### 4. Subnets ###
 resource "aws_subnet" "public_subnet_1" {
   vpc_id                  = aws_vpc.main_vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -49,7 +64,7 @@ resource "aws_subnet" "private_subnet_1" {
   }
 }
 
-### 4. Elastic IP ###
+### 5. Elastic IP ###
 resource "aws_eip" "nat_eip" {
   domain = "vpc"
   tags = {
@@ -57,7 +72,7 @@ resource "aws_eip" "nat_eip" {
   }
 }
 
-### 5. Route Tables ###
+### 6. Route Tables ###
 resource "aws_route_table" "public_rt_1" {
   vpc_id = aws_vpc.main_vpc.id
   route {
@@ -116,7 +131,7 @@ resource "aws_default_route_table" "main_route_table" {
 }
 
 
-### 6. Network ACLs ###
+### 7. Network ACLs ###
 resource "aws_default_network_acl" "main_nacl" {
   default_network_acl_id = aws_vpc.main_vpc.default_network_acl_id
   tags = {
@@ -228,7 +243,7 @@ resource "aws_network_acl_association" "private_subnet_1_assoc" {
   network_acl_id = aws_network_acl.private_nacl.id
 }
 
-### 7. Security Groups ###
+### 8. Security Groups ###
 resource "aws_security_group" "nat_sg" {
   vpc_id = aws_vpc.main_vpc.id
   tags = {
@@ -262,7 +277,7 @@ resource "aws_default_security_group" "main_security_group" {
   }
 }
 
-### Security Group Rules ###
+### 9. Security Group Rules ###
 resource "aws_security_group_rule" "nat_inbound_icmp" {
   type                     = "ingress"
   from_port                = -1
