@@ -394,3 +394,43 @@ resource "aws_security_group_rule" "wordpress_outbound_mysql" {
   security_group_id        = aws_security_group.wordpress_sg.id
   cidr_blocks              = ["127.0.0.1/32"]
 }
+
+resource "aws_instance" "nat_instance" {
+  ami           = "ami-08970251d20e940b0" # Replace with Amazon Linux 2023 AMI ID for your region
+  instance_type = "t2.micro"
+  key_name      = "test_key" # Name of your manually created key pair
+  subnet_id     = aws_subnet.public_subnet_1.id
+  associate_public_ip_address = true
+  security_groups = [aws_security_group.nat_sg.id]
+  source_dest_check = false
+
+  tags = {
+    Name = "NAT-Instance"
+  }
+}
+
+resource "aws_eip_association" "nat_eip_assoc" {
+  instance_id   = aws_instance.nat_instance.id
+  allocation_id = aws_eip.nat_eip.id
+}
+
+resource "aws_route" "private_route_to_nat" {
+  route_table_id         = aws_route_table.private_rt_1.id
+  destination_cidr_block = "0.0.0.0/0"
+  network_interface_id   = aws_instance.nat_instance.primary_network_interface_id
+
+  depends_on = [aws_instance.nat_instance]
+}
+
+resource "aws_instance" "wordpress_instance" {
+  ami           = "ami-0cb91c7de36eed2cb" # Replace with Ubuntu Server 24.04 AMI ID for your region
+  instance_type = "t2.micro"
+  key_name      = "test_key" # Name of your manually created key pair
+  subnet_id     = aws_subnet.private_subnet_1.id
+  associate_public_ip_address = false
+  security_groups = [aws_security_group.wordpress_sg.id]
+
+  tags = {
+    Name = "WordPress-Instance"
+  }
+}
