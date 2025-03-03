@@ -25,6 +25,46 @@ resource "aws_vpc_dhcp_options_association" "main_dhcp_options_assoc" {
   dhcp_options_id = aws_vpc_dhcp_options.main_dhcp_options.id
 }
 
+### IAM Role for SSM ###
+resource "aws_iam_role" "ssm_role" {
+  name = "SSM-Instance-Role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "SSM-Instance-Role"
+  }
+}
+
+### Attach SSM Policies to IAM Role ###
+resource "aws_iam_role_policy_attachment" "ssm_managed_policy" {
+  role       = aws_iam_role.ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
+  role       = aws_iam_role.ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+}
+
+### IAM Instance Profile ###
+resource "aws_iam_instance_profile" "ssm_instance_profile" {
+  name = "SSM-Instance-Profile"
+  role = aws_iam_role.ssm_role.name
+}
+
+
 ### 3. Internet Gateway ###
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main_vpc.id
@@ -143,6 +183,53 @@ resource "aws_default_network_acl" "main_nacl" {
 resource "aws_network_acl" "public_nacl" {
   vpc_id = aws_vpc.main_vpc.id
 
+  # Inbound Rules
+  ingress {
+    rule_no    = 100
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 22
+    to_port    = 22
+  }
+
+  ingress {
+    rule_no    = 110
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "10.0.3.0/24"
+    from_port  = 80
+    to_port    = 80
+  }
+
+  ingress {
+    rule_no    = 120
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "10.0.3.0/24"
+    from_port  = 443
+    to_port    = 443
+  }
+
+  ingress {
+    rule_no    = 130
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+
+  ingress {
+    rule_no    = 140
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "10.0.3.0/24"
+    from_port  = 1024
+    to_port    = 65535
+  }
+
+  # Outbound Rules
   egress {
     rule_no    = 100
     protocol   = "-1"
@@ -152,31 +239,13 @@ resource "aws_network_acl" "public_nacl" {
     to_port    = 0
   }
 
-  ingress {
-    rule_no    = 100
-    protocol   = "tcp"
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 80
-    to_port    = 80
-  }
-
-  ingress {
+  egress {
     rule_no    = 110
     protocol   = "tcp"
     action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 443
-    to_port    = 443
-  }
-
-  ingress {
-    rule_no    = 120
-    protocol   = "tcp"
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 22
-    to_port    = 22
+    cidr_block = "10.0.3.0/24"
+    from_port  = 1024
+    to_port    = 65535
   }
 
   tags = {
@@ -197,40 +266,60 @@ resource "aws_network_acl_association" "public_subnet_2_assoc" {
 resource "aws_network_acl" "private_nacl" {
   vpc_id = aws_vpc.main_vpc.id
 
-  egress {
-    rule_no    = 100
-    protocol   = "-1"
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 0
-    to_port    = 0
-  }
-
+  # Inbound Rules
   ingress {
     rule_no    = 100
     protocol   = "tcp"
     action     = "allow"
     cidr_block = "10.0.1.0/24"
-    from_port  = 0
-    to_port    = 65535
-  }
-
-  ingress {
-    rule_no    = 110
-    protocol   = "tcp"
-    action     = "allow"
-    cidr_block = "10.0.2.0/24"
-    from_port  = 0
-    to_port    = 65535
+    from_port  = 22
+    to_port    = 22
   }
 
   ingress {
     rule_no    = 120
     protocol   = "tcp"
     action     = "allow"
-    cidr_block = "10.0.3.0/24"
-    from_port  = 0
+    cidr_block = "10.0.1.0/24"
+    from_port  = 1024
     to_port    = 65535
+  }
+
+  ingress {
+    rule_no    = 130
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+
+  ingress {
+    rule_no    = 140
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "10.0.3.0/24"
+    from_port  = 3306
+    to_port    = 3306
+  }
+
+  # Outbound Rules
+  egress {
+    rule_no    = 100
+    protocol   = "-1"
+    action     = "allow"
+    cidr_block = "10.0.1.0/24"
+    from_port  = 0
+    to_port    = 0
+  }
+
+  egress {
+    rule_no    = 110
+    protocol   = "tcp"
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 443
+    to_port    = 443
   }
 
   tags = {
@@ -278,51 +367,72 @@ resource "aws_default_security_group" "main_security_group" {
 }
 
 ### 9. Security Group Rules ###
-resource "aws_security_group_rule" "nat_inbound_icmp" {
-  type                     = "ingress"
-  from_port                = -1
-  to_port                  = -1
-  protocol                 = "icmp"
-  security_group_id        = aws_security_group.nat_sg.id
-  source_security_group_id = aws_security_group.wordpress_sg.id
-}
-
-resource "aws_security_group_rule" "nat_inbound_all_traffic" {
-  type                     = "ingress"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
-  security_group_id        = aws_security_group.nat_sg.id
-  source_security_group_id = aws_security_group.wordpress_sg.id
-}
-
+# NAT EC2 Security Group Inbound Rules
 resource "aws_security_group_rule" "nat_inbound_ssh" {
+  type        = "ingress"
+  from_port   = 22
+  to_port     = 22
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.nat_sg.id
+}
+
+resource "aws_security_group_rule" "nat_inbound_https" {
   type                     = "ingress"
-  from_port                = 22
-  to_port                  = 22
+  from_port                = 443
+  to_port                  = 443
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.nat_sg.id
-  cidr_blocks              = ["0.0.0.0/0"]
-}
-
-resource "aws_security_group_rule" "nat_outbound_all_traffic" {
-  type                     = "egress"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
-  security_group_id        = aws_security_group.nat_sg.id
-  cidr_blocks              = ["0.0.0.0/0"]
-}
-
-resource "aws_security_group_rule" "nat_outbound_ssh" {
-  type                     = "egress"
-  from_port                = 22
-  to_port                  = 22
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.nat_sg.id
   source_security_group_id = aws_security_group.wordpress_sg.id
+  security_group_id        = aws_security_group.nat_sg.id
 }
 
+resource "aws_security_group_rule" "nat_inbound_custom_tcp" {
+  type                     = "ingress"
+  from_port                = 1024
+  to_port                  = 65535
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.wordpress_sg.id
+  security_group_id        = aws_security_group.nat_sg.id
+}
+
+# NAT EC2 Security Group Outbound Rules
+resource "aws_security_group_rule" "nat_outbound_all" {
+  type        = "egress"
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.nat_sg.id
+}
+
+resource "aws_security_group_rule" "nat_outbound_http" {
+  type        = "egress"
+  from_port   = 80
+  to_port     = 80
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.nat_sg.id
+}
+
+resource "aws_security_group_rule" "nat_outbound_https" {
+  type        = "egress"
+  from_port   = 443
+  to_port     = 443
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.nat_sg.id
+}
+
+resource "aws_security_group_rule" "nat_outbound_custom_tcp" {
+  type                     = "egress"
+  from_port                = 1024
+  to_port                  = 65535
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.wordpress_sg.id
+  security_group_id        = aws_security_group.nat_sg.id
+}
+
+################################################
 resource "aws_security_group_rule" "alb_inbound_http" {
   type                     = "ingress"
   from_port                = 80
@@ -349,23 +459,15 @@ resource "aws_security_group_rule" "alb_outbound_all_traffic" {
   security_group_id        = aws_security_group.alb_sg.id
   source_security_group_id = aws_security_group.wordpress_sg.id
 }
-
-resource "aws_security_group_rule" "wordpress_inbound_ssh" {
-  type                     = "ingress"
-  from_port                = 22
-  to_port                  = 22
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.wordpress_sg.id
-  source_security_group_id = aws_security_group.nat_sg.id
-}
-
+####################################################
+# WordPress Instance Security Group Inbound Rules
 resource "aws_security_group_rule" "wordpress_inbound_http" {
   type                     = "ingress"
   from_port                = 80
   to_port                  = 80
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.wordpress_sg.id
   source_security_group_id = aws_security_group.alb_sg.id
+  security_group_id        = aws_security_group.wordpress_sg.id
 }
 
 resource "aws_security_group_rule" "wordpress_inbound_https" {
@@ -373,17 +475,45 @@ resource "aws_security_group_rule" "wordpress_inbound_https" {
   from_port                = 443
   to_port                  = 443
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.wordpress_sg.id
   source_security_group_id = aws_security_group.alb_sg.id
+  security_group_id        = aws_security_group.wordpress_sg.id
 }
 
-resource "aws_security_group_rule" "wordpress_outbound_all_traffic" {
+resource "aws_security_group_rule" "wordpress_inbound_ssh" {
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.nat_sg.id
+  security_group_id        = aws_security_group.wordpress_sg.id
+}
+
+resource "aws_security_group_rule" "wordpress_inbound_custom_tcp" {
+  type                     = "ingress"
+  from_port                = 1024
+  to_port                  = 65535
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.nat_sg.id
+  security_group_id        = aws_security_group.wordpress_sg.id
+}
+
+resource "aws_security_group_rule" "wordpress_inbound_mysql" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.wordpress_sg.id
+  security_group_id        = aws_security_group.wordpress_sg.id
+}
+
+# WordPress Instance Security Group Outbound Rules
+resource "aws_security_group_rule" "wordpress_outbound_all" {
   type                     = "egress"
   from_port                = 0
   to_port                  = 0
   protocol                 = "-1"
-  security_group_id        = aws_security_group.wordpress_sg.id
   source_security_group_id = aws_security_group.nat_sg.id
+  security_group_id        = aws_security_group.wordpress_sg.id
 }
 
 resource "aws_security_group_rule" "wordpress_outbound_mysql" {
@@ -391,8 +521,8 @@ resource "aws_security_group_rule" "wordpress_outbound_mysql" {
   from_port                = 3306
   to_port                  = 3306
   protocol                 = "tcp"
+  source_security_group_id = aws_security_group.wordpress_sg.id
   security_group_id        = aws_security_group.wordpress_sg.id
-  cidr_blocks              = ["127.0.0.1/32"]
 }
 
 resource "aws_instance" "nat_instance" {
@@ -404,10 +534,16 @@ resource "aws_instance" "nat_instance" {
   security_groups = [aws_security_group.nat_sg.id]
   source_dest_check = false
 
+  iam_instance_profile = aws_iam_instance_profile.ssm_instance_profile.name # Attach SSM Role
   tags = {
     Name = "NAT-Instance"
   }
 }
+##########################################
+
+##########################################
+
+
 
 resource "aws_eip_association" "nat_eip_assoc" {
   instance_id   = aws_instance.nat_instance.id
@@ -430,6 +566,7 @@ resource "aws_instance" "wordpress_instance" {
   associate_public_ip_address = false
   security_groups = [aws_security_group.wordpress_sg.id]
 
+  iam_instance_profile = aws_iam_instance_profile.ssm_instance_profile.name # Attach SSM Role
   tags = {
     Name = "WordPress-Instance"
   }
