@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Copies WordPress config file, moves WordPress files to /var/www/demo, and sets correct ownership.",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "CopyWordPressFiles",
+      "inputs": {
+        "runCommand": [
+          "sudo cp /tmp/wordpress/wp-config-sample.php /tmp/wordpress/wp-config.php",
+          "sudo cp -a /tmp/wordpress/. /var/www/demo",
+          "sudo chown -R www-data:www-data /var/www/demo"
+        ]
+      }
+    }
+  ]
+}

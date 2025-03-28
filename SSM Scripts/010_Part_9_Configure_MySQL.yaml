@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Initial MySQL configuration: creates database, user, and grants privileges",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "SetupMySQLDatabase",
+      "inputs": {
+        "runCommand": [
+          "sudo mysql -e \"CREATE DATABASE demo DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;\"",
+          "sudo mysql -e \"CREATE USER 'demo_user'@'localhost' IDENTIFIED BY 'demo123';\"",
+          "sudo mysql -e \"GRANT ALL PRIVILEGES ON demo.* TO 'demo_user'@'localhost';\"",
+          "sudo mysql -e \"FLUSH PRIVILEGES;\""
+        ]
+      }
+    }
+  ]
+}

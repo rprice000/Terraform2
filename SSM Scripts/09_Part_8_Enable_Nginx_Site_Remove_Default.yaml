@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Enable demo site, remove default site, test Nginx config, and reload Nginx.",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "ConfigureNginx",
+      "inputs": {
+        "runCommand": [
+          "sudo ln -s /etc/nginx/sites-available/demo /etc/nginx/sites-enabled/",
+          "sudo unlink /etc/nginx/sites-enabled/default",
+          "sudo nginx -t",
+          "sudo systemctl reload nginx"
+        ]
+      }
+    }
+  ]
+}

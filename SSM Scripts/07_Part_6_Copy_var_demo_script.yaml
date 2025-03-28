@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Create /etc/nginx/sites-available/demo with initial configuration",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "CreateNginxConfig",
+      "inputs": {
+        "runCommand": [
+          "sudo bash -c 'cat > /etc/nginx/sites-available/demo <<EOF",
+          "server {",
+          "    listen 80;",
+          "    server_name your_IPv4;",
+          "    root /var/www/demo;",
+          "",
+          "    index index.html index.htm index.php;",
+          "",
+          "    location / {",
+          "        try_files  / /index.php?;",
+          "    }",
+          "",
+          "    location ~ \\.php$ {",
+          "        include snippets/fastcgi-php.conf;",
+          "        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;",
+          "    }",
+          "",
+          "    location ~ /\\.ht {",
+          "        deny all;",
+          "    }",
+          "}",
+          "EOF'",
+          "sudo ln -s /etc/nginx/sites-available/demo /etc/nginx/sites-enabled/",
+          "sudo systemctl restart nginx"
+        ]
+      }
+    }
+  ]
+}

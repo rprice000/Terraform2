@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Update server_name in Nginx configuration with ALB DNS",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "UpdateNginxConfig",
+      "inputs": {
+        "runCommand": [
+          "#!/bin/bash",
+          "ALB_DNS=$(cat /tmp/alb_dns.txt)",
+          "if [ -z \"$ALB_DNS\" ]; then",
+          "  echo 'ERROR: ALB DNS Name not found in /tmp/alb_dns.txt'",
+          "  exit 1",
+          "fi",
+          "echo 'Updating Nginx configuration with ALB DNS: $ALB_DNS'",
+          "sudo sed -i \"s|server_name .*;|server_name $ALB_DNS;|g\" /etc/nginx/sites-available/demo",
+          "echo 'Nginx configuration updated successfully!'"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Installs AWS CLI on Ubuntu using official AWS installer",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "InstallAWSCLI",
+      "inputs": {
+        "runCommand": [
+          "cd /tmp",
+          "curl -sLO \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\"",
+          "sudo apt install -y unzip",
+          "unzip -q awscli-exe-linux-x86_64.zip",
+          "sudo ./aws/install",
+          "rm -rf aws awscli-exe-linux-x86_64.zip",
+          "aws --version"
+        ]
+      }
+    }
+  ]
+}

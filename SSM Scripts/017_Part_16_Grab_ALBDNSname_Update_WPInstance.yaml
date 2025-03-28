@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Retrieve ALB DNS Name and save to a file",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "FetchALBDNS",
+      "inputs": {
+        "runCommand": [
+          "#!/bin/bash",
+          "ALB_DNS=$(aws elbv2 describe-load-balancers --query \"LoadBalancers[0].DNSName\" --output text)",
+          "echo \"$ALB_DNS\" > /tmp/alb_dns.txt"
+        ]
+      }
+    }
+  ]
+}

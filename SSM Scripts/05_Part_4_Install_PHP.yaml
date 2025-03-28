@@ -1,0 +1,22 @@
+schemaVersion: "2.2"
+description: "Install PHP and log the status"
+mainSteps:
+  - action: "aws:runShellScript"
+    name: "InstallPHP"
+    inputs:
+      runCommand:
+        - |
+          #!/bin/bash
+          set -e
+
+          LOG_FILE="/var/log/php_install_status.txt"
+
+          # Run PHP install and capture output
+          echo "Starting PHP installation..." | tee $LOG_FILE
+          if sudo apt install php-fpm php-mysql php-curl php-gd php-mbstring php-xml php-xmlrpc php-zip -y >> $LOG_FILE 2>&1; then
+              echo "PHP installation successful" | tee -a $LOG_FILE
+          else
+              echo "PHP installation failed" | tee -a $LOG_FILE
+          fi
+
+          echo "Script execution completed at $(date)" | tee -a $LOG_FILE

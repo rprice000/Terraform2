@@ -1,0 +1,22 @@
+schemaVersion: "2.2"
+description: "Install MySQL Server and log the status"
+mainSteps:
+  - action: "aws:runShellScript"
+    name: "InstallMySQL"
+    inputs:
+      runCommand:
+        - |
+          #!/bin/bash
+          set -e
+
+          LOG_FILE="/var/log/mysql_install_status.txt"
+
+          # Run MySQL install and capture output
+          echo "Starting MySQL installation..." | tee $LOG_FILE
+          if sudo apt install mysql-server -y >> $LOG_FILE 2>&1; then
+              echo "MySQL installation successful" | tee -a $LOG_FILE
+          else
+              echo "MySQL installation failed" | tee -a $LOG_FILE
+          fi
+
+          echo "Script execution completed at $(date)" | tee -a $LOG_FILE

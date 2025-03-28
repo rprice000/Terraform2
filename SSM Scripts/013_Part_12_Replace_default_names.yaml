@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Update wp-config.php with correct database credentials",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "UpdateWPConfig",
+      "inputs": {
+        "runCommand": [
+          "sudo sed -i \"s/database_name_here/demo/\" /var/www/demo/wp-config.php",
+          "sudo sed -i \"s/username_here/demo_user/\" /var/www/demo/wp-config.php",
+          "sudo sed -i \"s/password_here/demo123/\" /var/www/demo/wp-config.php"
+        ]
+      }
+    }
+  ]
+}

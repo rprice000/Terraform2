@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Download and extract the latest WordPress package.",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "DownloadAndExtractWordPress",
+      "inputs": {
+        "runCommand": [
+          "cd /tmp",
+          "curl -LO https://wordpress.org/latest.tar.gz",
+          "sudo tar -xzvf latest.tar.gz"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+schemaVersion: "2.2"
+description: "Creates /var/www/demo, sets correct ownership, and logs results."
+mainSteps:
+  - action: "aws:runShellScript"
+    name: "CreateAndVerifyDemoDirectory"
+    inputs:
+      runCommand:
+        - |
+          LOG_FILE="/var/log/demo_directory_setup.log"
+          echo "Starting directory setup..." | tee -a $LOG_FILE
+
+          # Ensure the directory exists
+          if [ ! -d "/var/www/demo" ]; then
+            echo "Directory /var/www/demo does not exist. Creating now..." | tee -a $LOG_FILE
+            sudo mkdir -p /var/www/demo
+          else
+            echo "Directory /var/www/demo already exists." | tee -a $LOG_FILE
+          fi
+
+          # Change ownership to the current user
+          sudo chown -R $USER:$USER /var/www/demo
+          echo "Ownership changed to $USER:$USER" | tee -a $LOG_FILE
+
+          # Verify directory creation and ownership
+          echo "Verifying directory properties..." | tee -a $LOG_FILE
+          ls -ld /var/www/demo | tee -a $LOG_FILE
+
+          echo "Setup completed successfully." | tee -a $LOG_FILE

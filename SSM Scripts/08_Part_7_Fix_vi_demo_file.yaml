@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Fix try_files directive in Nginx configuration",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "FixNginxTryFiles",
+      "inputs": {
+        "runCommand": [
+          "sudo sed -i 's|try_files  / /index.php?;|try_files $uri $uri/ /index.php?$args;|' /etc/nginx/sites-available/demo",
+          "sudo systemctl restart nginx"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Restart PHP 8.3 FPM service",
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "RestartPHPFPM",
+      "inputs": {
+        "runCommand": [
+          "sudo systemctl restart php8.3-fpm"
+        ]
+      }
+    }
+  ]
+}

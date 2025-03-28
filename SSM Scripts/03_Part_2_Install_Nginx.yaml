@@ -1,0 +1,22 @@
+schemaVersion: "2.2"
+description: "Install Nginx and log the status"
+mainSteps:
+  - action: "aws:runShellScript"
+    name: "InstallNginx"
+    inputs:
+      runCommand:
+        - |
+          #!/bin/bash
+          set -e
+
+          LOG_FILE="/var/log/nginx_install_status.txt"
+
+          # Run nginx install and capture output
+          echo "Starting Nginx installation..." | tee $LOG_FILE
+          if sudo apt install nginx -y >> $LOG_FILE 2>&1; then
+              echo "Nginx installation successful" | tee -a $LOG_FILE
+          else
+              echo "Nginx installation failed" | tee -a $LOG_FILE
+          fi
+
+          echo "Script execution completed at $(date)" | tee -a $LOG_FILE
